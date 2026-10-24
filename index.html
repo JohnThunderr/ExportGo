@@ -1,0 +1,666 @@
+<!doctype html><html lang="lv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Export-Go prototips</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: darba rīks — augšējā josla, kreisā navigācija, darba laukums; veidlapas priekšskatījums kā fizisks EUR.1 papīrs (zaļais giljošs) */
+:root {
+  --bg:#f4f6f4; --surface:#ffffff; --sunk:#eef1ee; --ink:#1b2420; --muted:#5b6862; --line:#d3dad5;
+  --accent:#2d6a4c; --accent-ink:#ffffff; --accent-soft:#e1eee6;
+  --warn:#9a5d06; --warn-soft:#fbefd9; --bad:#b0261c; --bad-soft:#fbe3e0; --ok:#2d6a4c;
+  --paper:#f2f8f1; --paper-line:#7d9c86; --paper-label:#4f7058; --paper-ink:#141414; --paper-hatch:#9fb5a5;
+  --sans:"IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"IBM Plex Mono", "Consolas", "Courier New", monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#111613; --surface:#181f1b; --sunk:#141a17; --ink:#e2e8e4; --muted:#9aa69f; --line:#2b3530;
+  --accent:#6dbb92; --accent-ink:#0f1a14; --accent-soft:#1d3127;
+  --warn:#e3a64c; --warn-soft:#33270f; --bad:#f07c72; --bad-soft:#3a1c19; --ok:#6dbb92; color-scheme:dark } }
+:root[data-theme="dark"] {
+  --bg:#111613; --surface:#181f1b; --sunk:#141a17; --ink:#e2e8e4; --muted:#9aa69f; --line:#2b3530;
+  --accent:#6dbb92; --accent-ink:#0f1a14; --accent-soft:#1d3127;
+  --warn:#e3a64c; --warn-soft:#33270f; --bad:#f07c72; --bad-soft:#3a1c19; --ok:#6dbb92; color-scheme:dark }
+
+* { box-sizing:border-box }
+body { background:var(--bg); color:var(--ink); font:14px/1.45 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:12px 32px }
+button, input, select { font:inherit; color:inherit }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+.app { max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:10px }
+
+.top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:10px 14px }
+.brand { display:flex; align-items:baseline; gap:10px }
+.brand b { font-family:var(--mono); font-weight:600; letter-spacing:.08em; font-size:15px }
+.brand span { color:var(--muted); font-size:12.5px }
+.who { display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--muted) }
+.demo { font-size:12.5px; color:var(--muted); border:1px dashed var(--line); border-radius:var(--r); padding:7px 12px; background:var(--sunk) }
+.demo b { color:var(--ink) }
+
+.shell { display:grid; grid-template-columns:200px minmax(0,1fr); gap:10px; align-items:start }
+nav { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:6px; display:flex; flex-direction:column; gap:2px; position:sticky; top:max(10px, env(safe-area-inset-top, 0px)) }
+nav button { text-align:left; border:0; background:none; padding:8px 10px; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; gap:8px }
+nav button:hover { background:var(--sunk) }
+nav button.on { background:var(--accent-soft); font-weight:600 }
+nav .n { font-family:var(--mono); font-size:12px; color:var(--muted) }
+main { min-width:0; display:flex; flex-direction:column; gap:12px }
+
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; min-width:0 }
+.head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap }
+h1 { font-size:19px; margin:0; font-weight:600; text-wrap:balance }
+h2 { font-size:15px; margin:0 0 8px; font-weight:600 }
+.sub { color:var(--muted); font-size:12.5px }
+.eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600 }
+
+.btn { border:1px solid var(--line); background:var(--surface); border-radius:4px; padding:6px 12px; cursor:pointer; white-space:nowrap }
+.btn:hover { border-color:var(--muted) }
+.btn.pri { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600 }
+.btn.sm { padding:3px 8px; font-size:12.5px }
+.btn.link { border:0; background:none; color:var(--accent); padding:0 4px; text-decoration:underline; text-underline-offset:2px }
+.btn:disabled { opacity:.45; cursor:not-allowed }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end }
+.grow { flex:1 1 200px; min-width:0 }
+label.f { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted) }
+label.f > input, label.f > select { color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:6px 8px; min-width:0 }
+input[type=number] { font-family:var(--mono) }
+input:disabled, select:disabled { background:var(--sunk) }
+
+.kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px }
+.kpi { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:10px 14px }
+.kpi .v { font-family:var(--mono); font-size:22px; font-weight:600; font-variant-numeric:tabular-nums }
+.kpi .l { font-size:12px; color:var(--muted) }
+
+.tw { overflow-x:auto }
+table { width:100%; border-collapse:collapse; font-size:13px }
+th { text-align:left; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:600; padding:7px 8px; border-bottom:1px solid var(--line); white-space:nowrap }
+td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle }
+td.num, th.num { text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap }
+td.mono { font-family:var(--mono); font-size:12.5px; white-space:nowrap }
+tr.tot td { font-weight:600; background:var(--sunk); border-bottom:0 }
+tbody tr:hover td { background:var(--sunk) }
+.empty { color:var(--muted); padding:18px 8px; text-align:center }
+
+.chip { display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:10px; border:1px solid var(--line); white-space:nowrap }
+.chip.Melnraksts { color:var(--muted) }
+.chip.Izdrukāts { background:var(--accent-soft); border-color:transparent }
+.chip.Iesniegts { background:var(--warn-soft); color:var(--warn); border-color:transparent }
+.chip.Apstiprināts { background:var(--accent); color:var(--accent-ink); border-color:transparent }
+.chip.Atcelts { text-decoration:line-through; color:var(--muted) }
+.chip.ai { border-style:dashed; border-color:var(--accent); color:var(--accent); cursor:pointer; background:none; font-family:var(--mono) }
+.chip.miss { border-color:var(--bad); color:var(--bad) }
+
+.steps { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px; list-style:none; margin:0; padding:0 }
+.steps button { width:100%; border:1px solid var(--line); background:var(--surface); padding:7px 6px; border-radius:4px; cursor:pointer; font-size:12.5px; text-align:left; display:flex; gap:6px; align-items:center }
+.steps button .k { font-family:var(--mono); font-size:11.5px; width:20px; height:20px; border-radius:50%; display:inline-grid; place-items:center; border:1px solid var(--line); flex:none }
+.steps button.on { border-color:var(--accent); background:var(--accent-soft); font-weight:600 }
+.steps button.done .k { background:var(--accent); color:var(--accent-ink); border-color:var(--accent) }
+.steps button span.t { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+.cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:12px; align-items:start }
+.panel { border:1px solid var(--line); border-radius:var(--r); padding:10px 12px; background:var(--surface); min-width:0 }
+.panel.ai { border-style:dashed; border-color:var(--accent) }
+.panel.note { background:var(--sunk) }
+.sugg { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed var(--line) }
+.sugg:first-of-type { border-top:0 }
+.code { font-family:var(--mono); font-weight:600 }
+.conf { height:5px; background:var(--sunk); border-radius:3px; overflow:hidden; width:80px }
+.conf i { display:block; height:100%; background:var(--accent) }
+
+.checks { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px }
+.checks li { display:grid; grid-template-columns:22px 1fr; gap:6px; padding:6px 8px; border-radius:4px; font-size:13.5px }
+.checks li .i { font-family:var(--mono); font-weight:600; text-align:center }
+.checks li.ok .i { color:var(--ok) }
+.checks li.warn { background:var(--warn-soft) } .checks li.warn .i { color:var(--warn) }
+.checks li.err { background:var(--bad-soft) } .checks li.err .i { color:var(--bad) }
+.box8 { font-family:var(--mono); font-size:12px; background:var(--sunk); border:1px solid var(--line); border-radius:4px; padding:8px 10px; white-space:pre-wrap; word-break:break-word }
+
+.foot { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:12px }
+.foot .row { align-items:center }
+.ro { background:var(--warn-soft); color:var(--warn); border-radius:4px; padding:7px 10px; font-size:13px }
+
+.tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--line) }
+.tabs button { border:0; background:none; padding:7px 12px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; color:var(--muted) }
+.tabs button.on { border-bottom-color:var(--accent); color:var(--ink); font-weight:600 }
+
+/* Veidlapa: 1 mm = 100/210 cqw */
+.sheetwrap { container-type:inline-size; width:100%; max-width:520px }
+.sheet { position:relative; width:100%; aspect-ratio:210/297; background-color:var(--paper);
+  background-image:repeating-radial-gradient(circle at 30% 40%, transparent 0 1.1cqw, rgba(45,106,76,.07) 1.1cqw 1.25cqw),
+                   repeating-linear-gradient(60deg, transparent 0 .9cqw, rgba(45,106,76,.05) .9cqw 1cqw);
+  border:1px solid var(--paper-line); box-shadow:0 1px 3px rgba(0,0,0,.12); overflow:hidden; color:var(--paper-ink) }
+.sheet .bx { position:absolute; border:.25cqw solid var(--paper-line); }
+.sheet .lb { position:absolute; color:var(--paper-label); font:500 1.35cqw/1.15 var(--sans); padding:.4cqw .6cqw }
+.sheet .ttl { position:absolute; font:700 2.1cqw/1.1 var(--sans); color:var(--paper-label); letter-spacing:.05em }
+.sheet .no { position:absolute; font:700 2.6cqw/1 var(--mono); color:#7a1f1f }
+.layer { position:absolute; inset:0; pointer-events:none }
+.tx { position:absolute; font:500 1.75cqw/1.3 var(--mono); text-transform:uppercase; white-space:pre-wrap; overflow:hidden; padding:2.2cqw .8cqw 0 }
+.tx8 { display:flex; flex-direction:column }
+.tx8 .strike { border-top:.3cqw solid var(--paper-ink); flex:1; margin-top:.6cqw;
+  background:repeating-linear-gradient(135deg, transparent 0 1.6cqw, var(--paper-hatch) 1.6cqw 1.8cqw) }
+.sheet.cal .tx { color:#b0261c }
+.prevgrid { display:grid; grid-template-columns:minmax(0,520px) minmax(0,1fr); gap:14px; align-items:start }
+
+.bars { display:flex; flex-direction:column; gap:6px }
+.bar { display:grid; grid-template-columns:minmax(0,190px) minmax(0,1fr) 92px; gap:8px; align-items:center; font-size:13px }
+.bar .tr { height:12px; background:var(--sunk); border-radius:2px; overflow:hidden }
+.bar .tr i { display:block; height:100%; background:var(--accent) }
+.bar .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.bar .v { font-family:var(--mono); text-align:right; font-variant-numeric:tabular-nums }
+
+.toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(18px + env(safe-area-inset-bottom, 0px)); background:var(--ink); color:var(--bg);
+  padding:9px 14px; border-radius:6px; font-size:13.5px; max-width:min(92vw, 560px); z-index:20; box-shadow:0 4px 16px rgba(0,0,0,.2) }
+.log { font-family:var(--mono); font-size:12px; display:flex; flex-direction:column; gap:3px; max-height:240px; overflow:auto }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns:minmax(0,1fr) }
+  nav { position:static; flex-direction:row; overflow-x:auto }
+  nav button { white-space:nowrap }
+  .cols, .prevgrid { grid-template-columns:minmax(0,1fr) }
+  .kpis { grid-template-columns:repeat(2, minmax(0,1fr)) }
+  .steps button span.t { display:none }
+  .steps button { justify-content:center }
+}
+@media (max-width: 480px) { .bar { grid-template-columns:minmax(0,110px) minmax(0,1fr) 78px } }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important } }
+</style>
+</head><body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>EXPORT-GO</b><span>Eksporta izcelsmes dokumentu platforma</span></div>
+    <div class="who"><span class="chip">Loma: dokumentu sagatavotājs</span><span>SIA EKSPORTĒTĀJS (piemērs)</span></div>
+  </header>
+  <div class="demo"><b>Prototipa karkass v1.</b> Demonstrācijas versija ar fiktīviem datiem: dati glabājas tikai šajā pārlūka logā un pēc lapas atjaunošanas tiek atiestatīti; nav lietotāju tiesību, integrāciju un drukas. Gala risinājums tiek izstrādāts projekta ietvaros.</div>
+  <div class="shell">
+    <nav id="nav" aria-label="Sadaļas"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(function () {
+'use strict';
+// ---------- Fiktīvi dati ----------
+const TODAY = '2026-10-24';
+const EU = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'];
+// Demo: valstis, kurām piemēro EUR.1 (preferenču nolīgumi ar ES). Produktā — uzturams saraksts.
+const EUR1 = ['UA','TR','GE','MD','MA','EG','TN','JO','IL','LB','RS','BA','ME','MK','AL','CH','NO','IS','CL','MX','ZA'];
+const COUNTRIES = { UA:'UKRAINE', AE:'UNITED ARAB EMIRATES', UZ:'UZBEKISTAN', TR:'TÜRKIYE', CN:"CHINA (PEOPLE'S REPUBLIC OF)", KG:'KYRGYZSTAN', BR:'BRAZIL', EE:'ESTONIA', GE:'GEORGIA', MD:'MOLDOVA', KZ:'KAZAKHSTAN' };
+const ORIG = { DE:'GERMANY', PL:'POLAND', ES:'SPAIN', LV:'LATVIA', IT:'ITALY', NL:'NETHERLANDS' };
+
+// Demo KN/TARIC izvilkums AI palīgam
+const KN = [
+  { hs:'0901 21 00', t:'Grauzdēta kafija ar kofeīnu', k:['kafija','kafijas','coffee','espresso','lungo','kapsulas','capsules','pupiņas','beans','maltā','ground','grauzdēta'] },
+  { hs:'0901 22 00', t:'Grauzdēta kafija bez kofeīna', k:['bez kofeīna','decaf','decaffeinated','kafija','pupiņas'] },
+  { hs:'2101 11 00', t:'Kafijas ekstrakti, esences, koncentrāti (šķīstošā kafija)', k:['šķīstošā','instant','ekstrakts','soluble','kafija'] },
+  { hs:'0902 30 00', t:'Melnā tēja (fermentēta), iepakojumos ≤ 3 kg', k:['tēja','tea','melnā','black','maisiņi'] },
+  { hs:'1806 32 90', t:'Šokolāde tāfelēs, bez pildījuma', k:['šokolāde','chocolate','tāfele'] },
+  { hs:'1905 31 99', t:'Saldie cepumi', k:['cepumi','biscuits','cookies','vafeles'] },
+  { hs:'1704 90 99', t:'Cukura konditorejas izstrādājumi (konfektes)', k:['konfektes','candy','karameles','sweets'] },
+  { hs:'3305 10 00', t:'Šampūni', k:['šampūns','shampoo'] },
+  { hs:'3401 11 00', t:'Ziepes tualetes vajadzībām', k:['ziepes','soap'] },
+  { hs:'2202 10 00', t:'Ūdens ar cukura vai aromātvielu piedevu', k:['dzēriens','gāzēts','soda','drink','limonāde'] },
+];
+
+const S = {
+  exporters: [{ id:'e1', name:'SIA EKSPORTĒTĀJS (piemērs)', addr:'BRĪVĪBAS IELA 1, RĪGA, LV-1010', country:'LATVIA', reg:'40000000000' }],
+  consignees: [
+    { id:'c1', name:'STEPPE FOODS LTD', addr:'15 SOBORNYI AVE, 49000 DNIPRO', cc:'UA', active:true },
+    { id:'c2', name:'NORDA TRADING LLC', addr:'AL QUOZ INDUSTRIAL AREA 3, DUBAI', cc:'AE', active:true },
+    { id:'c3', name:'SILKROAD TRADE MCHJ', addr:'AMIR TEMUR STR. 12, TASHKENT', cc:'UZ', active:true },
+    { id:'c4', name:'ANATOLIA GIDA A.Ş.', addr:'ÇEKMEKÖY, 34782 ISTANBUL', cc:'TR', active:true },
+    { id:'c5', name:'EASTGATE DISTRIBUTION LTD', addr:'XIAOSHAN DISTRICT, HANGZHOU', cc:'CN', active:true },
+    { id:'c6', name:'ALATOO MARKET LLC', addr:'CHUY AVE 101, BISHKEK', cc:'KG', active:true },
+    { id:'c7', name:'RIO VERDE IMPORTAÇÃO LTDA', addr:'MONTES CLAROS, MG', cc:'BR', active:true },
+    { id:'c8', name:'BALTIC NORD OÜ', addr:'TALLINNA MNT 5, NARVA', cc:'EE', active:false },
+  ],
+  goods: [
+    { id:'g1', lv:'Kafijas kapsulas Espresso, 16 gab./112 g', en:'COFFEE CAPSULES ESPRESSO 16 CAPS/112 G', hs:'0901 21 00', ean:'4750000000011', origin:'DE', ug:0.202, un:0.112 },
+    { id:'g2', lv:'Maltā kafija, 250 g', en:'GROUND COFFEE 250 G', hs:'0901 21 00', ean:'4750000000028', origin:'PL', ug:0.272, un:0.25 },
+    { id:'g3', lv:'Kafijas pupiņas, 1 kg', en:'COFFEE BEANS 1 KG', hs:'0901 21 00', ean:'4750000000035', origin:'ES', ug:1.06, un:1.0 },
+    { id:'g4', lv:'Šķīstošā kafija, 100 g', en:'INSTANT COFFEE 100 G', hs:'2101 11 00', ean:'4750000000042', origin:'PL', ug:0.429, un:0.1 },
+    { id:'g5', lv:'Kafijas kapsulas Lungo, 16 gab./104 g', en:'COFFEE CAPSULES LUNGO 16 CAPS/104 G', hs:'0901 21 00', ean:'4750000000059', origin:'DE', ug:0.196, un:0.104 },
+    { id:'g6', lv:'Melnā tēja, 100 maisiņi', en:'BLACK TEA 100 BAGS', hs:'0902 30 00', ean:'4750000000066', origin:'PL', ug:0.24, un:0.2 },
+    { id:'g7', lv:'Kafijas pupiņas bez kofeīna, 500 g', en:'DECAFFEINATED COFFEE BEANS 500 G', hs:'', ean:'4750000000073', origin:'IT', ug:0.54, un:0.5 },
+  ],
+  ships: [],
+  printer: { x:1.5, y:-0.5 },
+  spoiled: 0,
+  log: [],
+};
+const mk = (o) => Object.assign({ exporterId:'e1', consigneeId:'', docs:{ eur1:false, app:false, decl:false, coo:false }, origin:'EU', transport:'', remarks:'', invoice:'', pallets:1, lines:[], status:'Melnraksts', formNo:'', printedAt:'' }, o);
+S.ships.push(
+  mk({ id:'EG-0137', date:'2026-10-10', consigneeId:'c8', docs:{eur1:false,app:false,decl:false,coo:false}, lines:[{g:'g2',q:600}], status:'Atcelts', remarks:'Galamērķis ES' }),
+  mk({ id:'EG-0138', date:'2026-10-14', consigneeId:'c3', docs:{eur1:false,app:false,decl:false,coo:true}, invoice:'0611/26', pallets:2, lines:[{g:'g1',q:2400},{g:'g6',q:1200}], status:'Apstiprināts' }),
+  mk({ id:'EG-0139', date:'2026-10-15', consigneeId:'c4', docs:{eur1:true,app:true,decl:true,coo:false}, invoice:'0624/26', pallets:3, lines:[{g:'g2',q:4200},{g:'g4',q:2600}], status:'Apstiprināts', formNo:'DA 065941' }),
+  mk({ id:'EG-0140', date:'2026-10-17', consigneeId:'c5', docs:{eur1:false,app:false,decl:false,coo:true}, invoice:'0652/26', pallets:12, lines:[{g:'g1',q:3888},{g:'g5',q:864},{g:'g4',q:14520},{g:'g3',q:892}], status:'Iesniegts' }),
+  mk({ id:'EG-0141', date:'2026-10-20', consigneeId:'c1', docs:{eur1:true,app:true,decl:true,coo:false}, invoice:'0660/26', pallets:4, lines:[{g:'g1',q:1296},{g:'g2',q:1452},{g:'g3',q:1000}], status:'Izdrukāts', formNo:'DA 065944', printedAt:'2026-10-20 14:12' }),
+  mk({ id:'EG-0142', date:'2026-10-21', consigneeId:'c2', docs:{eur1:false,app:false,decl:false,coo:true}, invoice:'', pallets:2, lines:[{g:'g4',q:1800},{g:'g7',q:400}], status:'Melnraksts' }),
+);
+S.log.push('20.10.2026 14:12 · EG-0141 izdrukāts uz veidlapas DA 065944', '21.10.2026 09:40 · EG-0142 melnraksts izveidots');
+
+// ---------- Palīgi ----------
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const nf = (n, d = 2) => Number(n).toLocaleString('lv-LV', { minimumFractionDigits:d, maximumFractionDigits:d });
+const dlv = (iso) => iso ? iso.slice(8,10) + '.' + iso.slice(5,7) + '.' + iso.slice(0,4) : '';
+const G = (id) => S.goods.find(g => g.id === id);
+const C = (id) => S.consignees.find(c => c.id === id);
+const E = (id) => S.exporters.find(e => e.id === id);
+const cname = (cc) => COUNTRIES[cc] || cc;
+const now = () => dlv(TODAY) + ' ' + new Date().toTimeString().slice(0,5);
+const log = (t) => S.log.unshift(now() + ' · ' + t);
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 3200); }
+
+function totals(sh) {
+  let pcs = 0, gross = 0, net = 0;
+  sh.lines.forEach(l => { const g = G(l.g); const q = Number(l.q) || 0; pcs += q; gross += q * g.ug; net += q * g.un; });
+  return { pcs, gross: Math.round(gross * 100) / 100, net: Math.round(net * 100) / 100 };
+}
+const lineG = (l) => Math.round((Number(l.q) || 0) * G(l.g).ug * 100) / 100;
+const lineN = (l) => Math.round((Number(l.q) || 0) * G(l.g).un * 100) / 100;
+function box8(sh) {
+  const t = totals(sh);
+  const rows = sh.lines.map((l, i) => { const g = G(l.g);
+    return (i + 1) + '. ' + g.en + ', HS ' + (g.hs ? g.hs.replace(/\s/g,'').slice(0,6) : '??????') + ', ' + (Number(l.q) || 0) + ' PCS, GROSS ' + lineG(l).toFixed(2) + ' KG, NET ' + lineN(l).toFixed(2) + ' KG'; });
+  if (sh.lines.length) rows.push('TOTAL: ' + t.pcs + ' PCS, GROSS ' + t.gross.toFixed(2) + ' KG, NET ' + t.net.toFixed(2) + ' KG, PACKED ON ' + (sh.pallets || 0) + ' PALLETS.');
+  return rows.join('\n');
+}
+function docsLabel(d) {
+  const a = []; if (d.eur1) a.push('EUR.1'); if (d.app) a.push('pieteikums'); if (d.decl) a.push('deklarācija'); if (d.coo) a.push('ES izc. sert.');
+  return a.length ? a.join(' + ') : '—';
+}
+function suggestDocs(cc) {
+  if (!cc) return null;
+  if (EU.includes(cc)) return { t:'Galamērķis ir ES — izcelsmes dokumenti nav nepieciešami.', d:null };
+  if (EUR1.includes(cc)) return { t:'Galamērķim piemēro preferenču režīmu ar ES — ieteicams EUR.1 komplekts.', d:{ eur1:true, app:true, decl:true, coo:false } };
+  return { t:'Galamērķim nav preferenču nolīguma ar ES — ieteicams ES izcelsmes sertifikāts.', d:{ eur1:false, app:false, decl:false, coo:true } };
+}
+function aiSuggest(text) {
+  const q = (text || '').toLowerCase();
+  const res = KN.map(r => { let s = 0; r.k.forEach(k => { if (q.includes(k)) s += k.includes(' ') ? 3 : 1; }); return { ...r, s }; })
+    .filter(r => r.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
+  const top = res[0] ? res[0].s : 1;
+  return res.map(r => ({ hs:r.hs, t:r.t, c: Math.min(0.95, 0.45 + 0.5 * r.s / (top + 1)) }));
+}
+function checks(sh) {
+  const out = []; const c = C(sh.consigneeId); const t = totals(sh); const d = sh.docs;
+  const anyDoc = d.eur1 || d.app || d.decl || d.coo;
+  out.push(E(sh.exporterId) ? { l:'ok', t:'1. aile: eksportētājs izvēlēts no bibliotēkas' } : { l:'err', t:'Nav izvēlēts eksportētājs' });
+  if (!c) out.push({ l:'err', t:'Nav izvēlēts saņēmējs' });
+  else if (EU.includes(c.cc)) out.push({ l:'err', t:'Saņēmējs ir ES valstī (' + c.cc + ') — izcelsmes dokumenti nav nepieciešami' });
+  else out.push({ l:'ok', t:'3., 5. aile: saņēmējs un galamērķis — ' + cname(c.cc) });
+  if (!anyDoc) out.push({ l:'err', t:'Nav atzīmēts neviens sagatavojamais dokuments' });
+  if (c && d.eur1 && !EUR1.includes(c.cc) && !EU.includes(c.cc)) out.push({ l:'err', t:'EUR.1 nav piemērojams galamērķim ' + cname(c.cc) + ' — izvēlieties ES izcelsmes sertifikātu' });
+  if (c && d.coo && EUR1.includes(c.cc)) out.push({ l:'warn', t:'Galamērķim pieejams preferenču režīms — apsveriet EUR.1 (zemāks muitas nodoklis saņēmējam)' });
+  if (d.eur1 && !d.app) out.push({ l:'warn', t:'EUR.1 parasti iesniedz kopā ar pieteikumu' });
+  if (!sh.lines.length) out.push({ l:'err', t:'Nav pievienota neviena prece' });
+  sh.lines.forEach((l, i) => {
+    const g = G(l.g);
+    if (!(Number(l.q) > 0)) out.push({ l:'err', t:(i + 1) + '. rindai nav norādīts daudzums' });
+    if (!g.hs) out.push({ l:'err', t:(i + 1) + '. rindai („' + g.lv + '") nav apstiprināts HS kods' });
+  });
+  if (sh.lines.length) {
+    out.push({ l:'ok', t:'Katrai rindai ir kārtas numurs; starp rindām nav tukšu vietu (automātiski)' });
+    out.push({ l:'ok', t:'Zem pēdējās rindas tiks novilkta līnija un aizsvītrota neizmantotā vieta (automātiski)' });
+    out.push({ l:'ok', t:'9. aile: bruto svars ' + nf(t.gross) + ' kg = rindu summa; neto ' + nf(t.net) + ' kg' });
+  }
+  if (sh.lines.length > 8) out.push({ l:'warn', t:'8. ailē vairāk nekā 8 rindas — teksts tiks samazināts; apsveriet sūtījuma sadalīšanu' });
+  if (!(Number(sh.pallets) > 0)) out.push({ l:'warn', t:'Nav norādīts palešu skaits' });
+  if (!sh.invoice) out.push({ l:'warn', t:'10. aile (rēķins) nav aizpildīta — neobligāta, bet ieteicama' });
+  return out;
+}
+const hasErr = (sh) => checks(sh).some(x => x.l === 'err');
+const FORMNO = /^[A-Z]{2} ?\d{6}$/;
+
+// ---------- Stāvoklis ----------
+const st = { view:'sut', step:1, cur:null, docTab:'eur1', lib:'c', q:'', fc:'', fs:'', period:'2026-10', ai:null, cal:false, addG:false, addC:false, newHs:[] };
+const VIEWS = [['sut','Sūtījumi'],['bib','Datu bibliotēka'],['arh','Arhīvs'],['atsk','Atskaites'],['iest','Iestatījumi']];
+const nextNo = () => 'EG-' + String(Math.max(...S.ships.map(s => +s.id.slice(3))) + 1).padStart(4, '0');
+
+function go(v) { st.view = v; render(); try { history.replaceState(null, '', '#' + v); } catch (e) {} window.scrollTo({ top:0 }); }
+function openShip(sh, step) { st.cur = sh; st.view = 'wiz'; st.step = step || (sh.status === 'Melnraksts' ? 1 : 4); st.ai = null; st.cal = false;
+  const d = sh.docs; st.docTab = d.eur1 ? 'eur1' : d.app ? 'app' : d.decl ? 'decl' : 'coo'; render(); window.scrollTo({ top:0 }); }
+function newShip() { const sh = mk({ id: nextNo(), date: TODAY }); S.ships.push(sh); log(sh.id + ' melnraksts izveidots'); openShip(sh, 1); }
+function copyShip(src) {
+  const sh = mk(JSON.parse(JSON.stringify({ consigneeId:src.consigneeId, exporterId:src.exporterId, docs:src.docs, origin:src.origin, transport:src.transport, remarks:src.remarks, pallets:src.pallets, lines:src.lines })));
+  sh.id = nextNo(); sh.date = TODAY; S.ships.push(sh); log(sh.id + ' izveidots kā ' + src.id + ' kopija'); toast('Izveidota kopija ' + sh.id + ': puses un preces saglabātas, veidlapas Nr. un datums notīrīti.'); openShip(sh, 1);
+}
+
+// ---------- Renderēšana ----------
+function render() {
+  $('#nav').innerHTML = VIEWS.map(([k, t]) => {
+    const n = k === 'sut' ? S.ships.filter(s => s.status === 'Melnraksts').length : k === 'arh' ? S.ships.length : '';
+    return '<button data-go="' + k + '" class="' + ((st.view === k || (st.view === 'wiz' && k === 'sut')) ? 'on' : '') + '">' + t + (n !== '' ? '<span class="n">' + n + '</span>' : '') + '</button>';
+  }).join('');
+  const m = $('#main');
+  m.innerHTML = st.view === 'sut' ? vSut() : st.view === 'wiz' ? vWiz() : st.view === 'bib' ? vBib() : st.view === 'arh' ? vArh() : st.view === 'atsk' ? vAtsk() : vIest();
+}
+
+function shipRow(s, actions) {
+  const c = C(s.consigneeId); const t = totals(s);
+  return '<tr><td class="mono"><button class="btn link" data-open="' + s.id + '">' + s.id + '</button></td><td class="mono">' + dlv(s.date) + '</td><td>' + esc(c ? c.name : '—') + '</td><td class="mono">' + (c ? c.cc : '') + '</td><td>' + docsLabel(s.docs) + '</td><td class="mono">' + (s.formNo || '—') + '</td><td class="num">' + nf(t.gross) + '</td><td><span class="chip ' + s.status + '">' + s.status + '</span></td><td style="white-space:nowrap">' + actions + '</td></tr>';
+}
+function vSut() {
+  const mon = S.ships.filter(s => s.date.startsWith('2026-10') && s.status !== 'Melnraksts' && s.status !== 'Atcelts');
+  const active = S.consignees.filter(c => c.active).length;
+  const list = S.ships.filter(s => s.status === 'Melnraksts' || s.status === 'Izdrukāts' || s.status === 'Iesniegts').slice().sort((a, b) => b.id.localeCompare(a.id));
+  return '<div class="card"><div class="head"><div><div class="eyebrow">Darbs procesā</div><h1>Sūtījumi</h1></div><button class="btn pri" data-act="new">+ Jauns sūtījums</button></div></div>' +
+    '<div class="kpis">' +
+      kpi(S.ships.filter(s => s.status === 'Melnraksts').length, 'Melnraksti') +
+      kpi(mon.length, 'Noformēti oktobrī') +
+      kpi(active, 'Aktīvie saņēmēji') +
+      kpi(S.spoiled, 'Sabojātas veidlapas') +
+    '</div>' +
+    '<div class="card"><h2>Nepabeigtie un iesniegtie</h2><div class="tw"><table><thead><tr><th>Nr.</th><th>Datums</th><th>Saņēmējs</th><th>Valsts</th><th>Dokumenti</th><th>Veidlapa</th><th class="num">Bruto, kg</th><th>Statuss</th><th></th></tr></thead><tbody>' +
+      (list.length ? list.map(s => shipRow(s, '<button class="btn sm" data-open="' + s.id + '">Atvērt</button> <button class="btn sm" data-copy="' + s.id + '">Kopēt</button>')).join('') : '<tr><td colspan="9" class="empty">Nav nepabeigtu sūtījumu.</td></tr>') +
+    '</tbody></table></div><p class="sub" style="margin:8px 0 0">„Kopēt" izveido jaunu sūtījumu ar tām pašām pusēm un precēm; veidlapas numurs un datums tiek notīrīti. Apstiprinātie sūtījumi — Arhīvā.</p></div>';
+}
+const kpi = (v, l) => '<div class="kpi"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>';
+
+// ----- Vednis -----
+const STEPS = ['Puses', 'Preces', 'Pārbaude', 'Priekšskatījums', 'Druka / PDF'];
+function vWiz() {
+  const sh = st.cur; const ro = sh.status !== 'Melnraksts';
+  const errs = hasErr(sh);
+  let h = '<div class="card"><div class="head"><div><div class="eyebrow">Sūtījums ' + sh.id + ' · ' + dlv(sh.date) + '</div><h1>' + esc(C(sh.consigneeId) ? C(sh.consigneeId).name : 'Jauns sūtījums') + '</h1></div><span class="chip ' + sh.status + '">' + sh.status + '</span></div></div>';
+  h += '<ol class="steps">' + STEPS.map((t, i) => '<li><button data-step="' + (i + 1) + '" class="' + (st.step === i + 1 ? 'on' : st.step > i + 1 ? 'done' : '') + '"><span class="k">' + (st.step > i + 1 ? '✓' : i + 1) + '</span><span class="t">' + t + '</span></button></li>').join('') + '</ol>';
+  if (ro) h += '<div class="ro">Dokuments ir „' + sh.status + '". Izdrukātu veidlapu labot nedrīkst — izmaiņām izveidojiet kopiju. <button class="btn sm" data-copy="' + sh.id + '">Kopēt kā jaunu</button></div>';
+  h += '<div class="card">' + (st.step === 1 ? wiz1(sh, ro) : st.step === 2 ? wiz2(sh, ro) : st.step === 3 ? wiz3(sh) : st.step === 4 ? wiz4(sh, ro) : wiz5(sh, ro));
+  h += '<div class="foot" style="margin-top:14px"><div class="row"><button class="btn" data-act="back">' + (st.step === 1 ? '← Uz sarakstu' : '← Atpakaļ') + '</button></div><div class="row">' +
+    (ro ? '' : '<button class="btn" data-act="save">Saglabāt melnrakstu</button>') +
+    (st.step < 5 ? '<button class="btn pri" data-act="next"' + (st.step === 3 && errs ? ' disabled title="Vispirms novērsiet kļūdas"' : '') + '>Tālāk: ' + STEPS[st.step].toLowerCase() + ' →</button>' : '') +
+    '</div></div></div>';
+  return h;
+}
+function sel(id, opts, val, dis) {
+  return '<select id="' + id + '" data-f="' + id + '"' + (dis ? ' disabled' : '') + '>' + opts.map(([v, t]) => '<option value="' + esc(v) + '"' + (String(v) === String(val) ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select>';
+}
+function wiz1(sh, ro) {
+  const c = C(sh.consigneeId); const sg = c ? suggestDocs(c.cc) : null; const dis = ro ? ' disabled' : '';
+  const cons = S.consignees.filter(x => x.active || x.id === sh.consigneeId);
+  return '<div class="cols"><div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div class="row"><label class="f grow">1. aile — eksportētājs' + sel('exporterId', S.exporters.map(e => [e.id, e.name + ', ' + e.addr]), sh.exporterId, ro) + '</label></div>' +
+    '<div class="row"><label class="f grow">3. aile — saņēmējs (' + S.consignees.filter(x => x.active).length + ' aktīvi)' + sel('consigneeId', [['', '— izvēlieties no bibliotēkas —']].concat(cons.map(x => [x.id, x.name + ' · ' + x.cc])), sh.consigneeId, ro) + '</label></div>' +
+    '<div class="row"><label class="f grow">2. aile — preferenciālā tirdzniecība starp<input id="trade" value="' + (c ? 'EU — ' + esc(cname(c.cc)) : '') + '" disabled></label>' +
+      '<label class="f" style="flex:0 1 150px">4. aile — izcelsme' + sel('origin', [['EU','EU'],['LATVIA','LATVIA']], sh.origin, ro) + '</label>' +
+      '<label class="f" style="flex:1 1 170px">5. aile — galamērķis<input id="dest" value="' + (c ? esc(cname(c.cc)) : '') + '" disabled></label></div>' +
+    '<div class="row"><label class="f grow">6. aile — transports (neobligāts)<input id="transport" data-f="transport" value="' + esc(sh.transport) + '" placeholder="piem., autotransports"' + dis + '></label>' +
+      '<label class="f grow">10. aile — rēķins<input id="invoice" data-f="invoice" value="' + esc(sh.invoice) + '" placeholder="piem., 0660/26"' + dis + '></label></div>' +
+    '<div class="row"><label class="f grow">7. aile — piezīmes<input id="remarks" data-f="remarks" value="' + esc(sh.remarks) + '"' + dis + '></label>' +
+      '<label class="f" style="flex:0 1 120px">Paletes<input id="pallets" type="number" min="0" data-f="pallets" value="' + esc(sh.pallets) + '"' + dis + '></label></div>' +
+  '</div><div style="display:flex;flex-direction:column;gap:10px">' +
+    '<div class="panel"><h2>Sagatavojamie dokumenti</h2>' +
+      [['eur1','EUR.1 preču aprites sertifikāts'],['app','EUR.1 pieteikums'],['decl','Eksportētāja deklarācija'],['coo','ES izcelsmes sertifikāts (essCert dati)']].map(([k, t]) =>
+        '<label style="display:flex;gap:8px;align-items:center;padding:3px 0"><input type="checkbox" id="doc_' + k + '" data-doc="' + k + '"' + (sh.docs[k] ? ' checked' : '') + dis + '> ' + t + '</label>').join('') +
+    '</div>' +
+    (sg ? '<div class="panel note"><div class="eyebrow">Ieteikums pēc galamērķa</div><p style="margin:4px 0 8px">' + sg.t + '</p>' + (sg.d && !ro ? '<button class="btn sm" data-act="applydocs">Piemērot ieteikumu</button>' : '') + '</div>' : '<div class="panel note sub">Izvēlieties saņēmēju — platforma ieteiks vajadzīgos dokumentus pēc galamērķa valsts.</div>') +
+    (c ? '<div class="panel"><div class="eyebrow">Saņēmējs no bibliotēkas</div><div class="code" style="margin-top:4px">' + esc(c.name) + '</div><div class="sub">' + esc(c.addr) + ', ' + esc(cname(c.cc)) + '</div></div>' : '') +
+  '</div></div>';
+}
+function wiz2(sh, ro) {
+  const t = totals(sh); const dis = ro ? ' disabled' : '';
+  const miss = sh.lines.map(l => G(l.g)).filter(g => !g.hs);
+  const aiG = st.ai ? G(st.ai) : miss[0];
+  const sugg = aiG ? aiSuggest(aiG.lv + ' ' + aiG.en) : [];
+  const avail = S.goods.filter(g => !sh.lines.some(l => l.g === g.id));
+  let h = '<div class="cols"><div style="display:flex;flex-direction:column;gap:10px;min-width:0">';
+  if (!ro) h += '<div class="row"><label class="f grow">Prece no kataloga' + sel('addGood', [['', '— izvēlieties —']].concat(avail.map(g => [g.id, g.lv + (g.hs ? ' · ' + g.hs : ' · bez HS')])), '') + '</label>' +
+    '<label class="f" style="flex:0 1 120px">Daudzums, gab.<input id="addQty" type="number" min="1" value="100"></label><button class="btn pri" data-act="addline">Pievienot</button><button class="btn" data-act="csv">Importēt no rēķina (CSV)</button></div>';
+  h += '<div class="tw"><table><thead><tr><th>Nr.</th><th>Prece</th><th>HS kods</th><th>EAN</th><th>Izc.</th><th class="num">Gab.</th><th class="num">Bruto kg</th><th class="num">Neto kg</th><th></th></tr></thead><tbody>' +
+    (sh.lines.length ? sh.lines.map((l, i) => { const g = G(l.g);
+      return '<tr><td class="mono">' + (i + 1) + '</td><td style="min-width:190px">' + esc(g.lv) + '</td><td style="white-space:nowrap">' + (g.hs ? '<span class="mono">' + g.hs + '</span>' : '<button class="chip ai" data-ai="' + g.id + '">AI ieteikums ?</button>') + '</td><td class="mono">' + g.ean + '</td><td class="mono">' + g.origin + '</td>' +
+        '<td class="num"><input type="number" min="0" data-q="' + i + '" value="' + l.q + '" style="width:90px;text-align:right;border:1px solid var(--line);border-radius:4px;padding:3px 6px;background:var(--surface)"' + dis + '></td>' +
+        '<td class="num">' + nf(lineG(l)) + '</td><td class="num">' + nf(lineN(l)) + '</td><td>' + (ro ? '' : '<button class="btn sm" data-del="' + i + '" aria-label="Dzēst rindu">✕</button>') + '</td></tr>'; }).join('') +
+      '<tr class="tot"><td colspan="5">KOPĀ (aprēķināts automātiski) · paletes: ' + (sh.pallets || 0) + '</td><td class="num">' + nf(t.pcs, 0) + '</td><td class="num">' + nf(t.gross) + '</td><td class="num">' + nf(t.net) + '</td><td></td></tr>'
+    : '<tr><td colspan="9" class="empty">Pievienojiet preces no kataloga vai importējiet no rēķina.</td></tr>') +
+    '</tbody></table></div>';
+  h += '<div><div class="eyebrow" style="margin-bottom:4px">8. ailes teksts (ģenerēts)</div><div class="box8">' + esc(box8(sh) || '—') + '</div></div></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:10px">';
+  h += '<div class="panel ai"><h2>AI klasifikācijas palīgs</h2>' + (aiG ?
+      '<div class="sub">Prece</div><div style="margin-bottom:6px">' + esc(aiG.lv) + '</div>' +
+      (sugg.length ? sugg.map((s, i) => '<div class="sugg"><div style="min-width:0"><div class="code">' + s.hs + '</div><div class="sub">' + esc(s.t) + '</div><div class="conf" title="Ticamība"><i style="width:' + Math.round(s.c * 100) + '%"></i></div></div>' + (ro ? '' : '<button class="btn sm' + (i === 0 ? ' pri' : '') + '" data-hs="' + aiG.id + '|' + s.hs + '">Apstiprināt</button>') + '</div>').join('')
+        : '<p class="sub">Nav atbilstības — ievadiet HS kodu manuāli bibliotēkā.</p>') +
+      '<p class="sub" style="margin:8px 0 0">Ieteikums no ES KN/TARIC aprakstiem. Lēmumu vienmēr apstiprina lietotājs; apstiprinātais kods saglabājas preču katalogā.</p>'
+    : '<p class="sub" style="margin:0">Visām precēm ir apstiprināti HS kodi. Pievienojiet „Kafijas pupiņas bez kofeīna" no kataloga, lai redzētu ieteikumu.</p>') +
+    '<p class="sub" style="margin:8px 0 0;border-top:1px dashed var(--line);padding-top:6px">Prototipā — atslēgvārdu salīdzinājums ar KN izvilkumu; produktā — lokāls atvērtā koda AI modelis uz platformas servera.</p></div>';
+  const ck = checks(sh).filter(x => x.l !== 'ok' || /kārtas|9\. aile/.test(x.t)).slice(0, 6);
+  h += '<div class="panel"><h2>Pārbaude reāllaikā</h2><ul class="checks">' + ck.map(x => '<li class="' + x.l + '"><span class="i">' + (x.l === 'ok' ? '✓' : x.l === 'warn' ? '!' : '✕') + '</span><span>' + esc(x.t) + '</span></li>').join('') + '</ul></div>';
+  return h + '</div></div>';
+}
+function wiz3(sh) {
+  const ck = checks(sh); const e = ck.filter(x => x.l === 'err').length, w = ck.filter(x => x.l === 'warn').length;
+  return '<div class="head" style="margin-bottom:10px"><h2 style="margin:0">EUR.1 aizpildīšanas noteikumu un obligāto lauku pārbaude</h2><span class="sub">' + (e ? e + ' kļūdas · ' : 'Kļūdu nav · ') + w + ' brīdinājumi</span></div>' +
+    '<ul class="checks">' + ck.map(x => '<li class="' + x.l + '"><span class="i">' + (x.l === 'ok' ? '✓' : x.l === 'warn' ? '!' : '✕') + '</span><span>' + esc(x.t) + '</span></li>').join('') + '</ul>' +
+    '<div class="panel note" style="margin-top:12px"><div class="eyebrow">Avots</div><p class="sub" style="margin:4px 0 0">EUR.1 veidlapas otrās puses piezīmes: veidlapā nedrīkst būt dzēsumu un pārrakstījumu; starp ierakstiem nedrīkst atstāt tukšas vietas, katram ierakstam priekšā kārtas numurs; zem pēdējā ieraksta novelk horizontālu līniju, neizmantoto vietu aizsvītro; preces apraksta atbilstoši tirdzniecības praksei. ' + (e ? 'Nepilnīgu komplektu nevar nosūtīt drukai.' : '') + '</p></div>';
+}
+function wiz4(sh, ro) {
+  const d = sh.docs; const tabs = [['eur1','EUR.1'],['app','Pieteikums'],['decl','Eksportētāja deklarācija'],['coo','ES izcelsmes sertifikāts']].filter(([k]) => d[k]);
+  if (!tabs.length) return '<p class="sub">Nav atzīmēts neviens dokuments (1. solis).</p>';
+  if (!d[st.docTab]) st.docTab = tabs[0][0];
+  const needNo = d.eur1 || d.app; const okNo = FORMNO.test((sh.formNo || '').trim());
+  return '<div class="tabs" role="tablist">' + tabs.map(([k, t]) => '<button data-tab="' + k + '" class="' + (st.docTab === k ? 'on' : '') + '">' + t + '</button>').join('') + '</div>' +
+    '<div class="prevgrid" style="margin-top:12px"><div class="sheetwrap">' + sheet(sh, st.docTab) + '</div><div style="display:flex;flex-direction:column;gap:10px">' +
+      (needNo ? '<div class="panel"><h2>Iepriekš numurētā veidlapa</h2><label class="f">Veidlapas Nr. (no papīra veidlapas)<input id="formNo" data-f="formNo" value="' + esc(sh.formNo) + '" placeholder="DA 065945"' + (ro ? ' disabled' : '') + '></label>' +
+        (sh.formNo && !okNo ? '<p class="sub" style="color:var(--bad);margin:4px 0 0">Formāts: 2 burti + 6 cipari, piem., DA 065945.</p>' : '') + '</div>' : '') +
+      '<div class="panel"><h2>Printera kalibrēšana</h2><div class="row"><label class="f grow">Nobīde X, mm<input id="px" type="number" step="0.5" data-p="x" value="' + S.printer.x + '"></label><label class="f grow">Nobīde Y, mm<input id="py" type="number" step="0.5" data-p="y" value="' + S.printer.y + '"></label></div>' +
+        '<div class="row" style="margin-top:8px"><button class="btn sm' + (st.cal ? ' pri' : '') + '" data-act="cal">' + (st.cal ? 'Rāda teksta slāni sarkanā' : 'Rādīt teksta slāni') + '</button><button class="btn sm" data-act="calpage">Drukāt kalibrēšanas lapu</button></div>' +
+        '<p class="sub" style="margin:6px 0 0">Teksta slānis pārvietojas kopā ar nobīdi — tā var pārbaudīt, vai teksts trāpa ailēs, pirms tiek izmantota numurētā veidlapa.</p></div>' +
+      '<div class="panel note sub">Teksts tiek novietots pēc ailes koordinātēm milimetros (A4, 210 × 297 mm). Neizmantotā 8. ailes daļa tiek aizsvītrota automātiski.</div>' +
+    '</div></div>';
+}
+function sheet(sh, kind) {
+  const c = C(sh.consigneeId) || { name:'', addr:'', cc:'' }; const e = E(sh.exporterId); const t = totals(sh);
+  const mm = (v) => (v * 100 / 210) + 'cqw';
+  const B = (x, y, w, hh, lbl) => '<div class="bx" style="left:' + mm(x) + ';top:' + mm(y) + ';width:' + mm(w) + ';height:' + mm(hh) + '"></div>' + (lbl ? '<div class="lb" style="left:' + mm(x) + ';top:' + mm(y) + ';width:' + mm(w) + '">' + lbl + '</div>' : '');
+  const T = (x, y, w, hh, txt, cls) => '<div class="tx ' + (cls || '') + '" style="left:' + mm(x) + ';top:' + mm(y) + ';width:' + mm(w) + ';height:' + mm(hh) + '">' + txt + '</div>';
+  const exTxt = esc(e.name.replace(' (piemērs)', '') + '\n' + e.addr + ', ' + e.country);
+  const coTxt = esc(c.name + (c.addr ? '\n' + c.addr + ', ' + cname(c.cc) : ''));
+  const off = 'transform:translate(' + mm(S.printer.x) + ',' + mm(S.printer.y) + ')';
+  let frame = '', text = '';
+  if (kind === 'eur1' || kind === 'app') {
+    frame += '<div class="ttl" style="left:' + mm(8) + ';top:' + mm(4) + '">' + (kind === 'eur1' ? 'PREČU APRITES SERTIFIKĀTS / MOVEMENT CERTIFICATE' : 'PIETEIKUMS PREČU APRITES SERTIFIKĀTA SAŅEMŠANAI') + '</div>' +
+      B(8,12,100,30,'1. Eksportētājs (nosaukums, pilna adrese, valsts)') + B(110,12,92,14,'') +
+      '<div class="ttl" style="left:' + mm(113) + ';top:' + mm(14) + '">EUR.1</div><div class="no" style="left:' + mm(140) + ';top:' + mm(15.5) + '">' + esc(sh.formNo || 'DA ______') + '</div>' +
+      B(110,26,92,16,'2. Sertifikāts izmantojams preferenciālajā tirdzniecībā starp') + B(8,42,100,28,'3. Saņēmējs (aizpilda pēc izvēles)') +
+      B(110,42,46,28,'4. Izcelsmes valsts / grupa') + B(156,42,46,28,'5. Galamērķa valsts') + B(8,70,100,22,'6. Transportēšana (pēc izvēles)') + B(110,70,92,22,'7. Piezīmes') +
+      B(8,92,138,92,'8. Kārtas nr.; marķējumi; iepakojumi; preču apraksts') + B(146,92,28,92,'9. Bruto (kg)') + B(174,92,28,92,'10. Rēķini') +
+      B(8,184,97,72,kind === 'eur1' ? '11. MUITAS APSTIPRINĀJUMS' : '11. Iesniedzēja paraksts') + B(105,184,97,72,'12. EKSPORTĒTĀJA DEKLARĀCIJA') + B(8,256,194,32,kind === 'eur1' ? '13.–14. Pārbaudes pieprasījums / rezultāts (otrā puse)' : 'Pievienotie dokumenti');
+    text += T(8,12,100,30,exTxt) + T(110,26,92,16,'EU — ' + esc(cname(c.cc))) + T(8,42,100,28,coTxt) + T(110,42,46,28,esc(sh.origin)) + T(156,42,46,28,esc(cname(c.cc))) +
+      T(8,70,100,22,esc(sh.transport || '—')) + T(110,70,92,22,esc(sh.remarks || '—')) +
+      '<div class="tx tx8" style="left:' + mm(8) + ';top:' + mm(92) + ';width:' + mm(138) + ';height:' + mm(92) + ';font-size:' + (sh.lines.length > 5 ? '1.45cqw' : '1.75cqw') + '"><div>' + esc(box8(sh)) + '</div><div class="strike"></div></div>' +
+      T(146,92,28,92,t.gross.toFixed(2) + '\nKG') + T(174,92,28,92,esc(sh.invoice || '')) +
+      (kind === 'eur1' ? '' : T(8,184,97,72,'')) + T(105,184,97,72,'\n\n\n\nRĪGA, ' + dlv(sh.date));
+  } else if (kind === 'decl') {
+    frame += '<div class="ttl" style="left:' + mm(8) + ';top:' + mm(10) + ';font-size:2.6cqw">EKSPORTĒTĀJA DEKLARĀCIJA</div>' +
+      '<div class="lb" style="left:' + mm(8) + ';top:' + mm(20) + ';width:' + mm(194) + ';font-size:1.55cqw">Es, apakšā parakstījies (-usies), lapas otrā pusē minēto preču eksportētājs, APLIECINU, ka preces atbilst pievienotā sertifikāta izsniegšanai noteiktajām prasībām. NORĀDU šādus apstākļus, kuru rezultātā var uzskatīt, ka šīs preces atbilst minētajām prasībām:</div>' +
+      B(8,40,194,46,'') + '<div class="lb" style="left:' + mm(8) + ';top:' + mm(90) + ';width:' + mm(194) + ';font-size:1.55cqw">IESNIEDZU šādus apstiprinošus dokumentus:</div>' + B(8,98,194,46,'') +
+      '<div class="lb" style="left:' + mm(8) + ';top:' + mm(150) + ';width:' + mm(194) + ';font-size:1.55cqw">APŅEMOS pēc attiecīgo iestāžu pieprasījuma iesniegt jebkādus pamatojošus pierādījumus. LŪDZU izdot pievienoto sertifikātu šīm precēm.</div>' +
+      B(8,200,95,30,'(Vieta un datums)') + B(107,200,95,30,'(Paraksts)');
+    const origins = [...new Set(sh.lines.map(l => G(l.g).origin))].map(o => ORIG[o] || o).join(', ');
+    text += T(8,40,194,46,'PRECES IR RAŽOTAS ES (' + esc(origins || '—') + ') UN ATBILST ES IZCELSMES NOTEIKUMIEM; PRECES NAV PAKĻAUTAS APSTRĀDEI ĀRPUS ES.') +
+      T(8,98,194,46,'RĒĶINS ' + esc(sh.invoice || '—') + '; RAŽOTĀJU DEKLARĀCIJAS; PIEGĀDĀTĀJU RĒĶINI.') + T(8,200,95,30,'\nRĪGA, ' + dlv(sh.date));
+  } else {
+    frame += '<div class="ttl" style="left:' + mm(8) + ';top:' + mm(4) + '">EIROPAS SAVIENĪBA · IZCELSMES SERTIFIKĀTS / CERTIFICATE OF ORIGIN</div>' +
+      B(8,12,120,30,'1. Nosūtītājs / Consignor') + B(128,12,74,30,'ORIĢINĀLS · Nr. (piešķir LTRK)') + B(8,42,120,34,'2. Saņēmējs / Consignee') +
+      B(128,42,74,34,'3. Izcelsmes valsts / Country of origin') + B(8,76,120,20,'4. Pārvadāšanas veids (neobligāts)') + B(128,76,74,20,'5. Piezīmes / Remarks') +
+      B(8,96,150,120,'6. Kārtas nr., marķējumi, iepakojumi, preču apraksts') + B(158,96,44,120,'7. Daudzums / Quantity') + B(8,216,194,40,'8. Pilnvarotā iestāde apliecina izcelsmi (LTRK)');
+    const origins = [...new Set(sh.lines.map(l => G(l.g).origin))].map(o => ORIG[o] || o).join(', ');
+    text += T(8,12,120,30,exTxt) + T(8,42,120,34,coTxt) + T(128,42,74,34,esc(origins || '—')) + T(8,76,120,20,esc(sh.transport || '—')) + T(128,76,74,20,esc(sh.invoice ? 'INVOICE NO. ' + sh.invoice : '—')) +
+      '<div class="tx tx8" style="left:' + mm(8) + ';top:' + mm(96) + ';width:' + mm(150) + ';height:' + mm(120) + ';font-size:' + (sh.lines.length > 5 ? '1.45cqw' : '1.7cqw') + '"><div>' + esc(box8(sh)) + '</div><div class="strike"></div></div>' +
+      T(158,96,44,120,nf(t.pcs, 0) + ' PCS\n' + t.gross.toFixed(2) + ' KG GROSS\n' + t.net.toFixed(2) + ' KG NET');
+  }
+  return '<div class="sheet' + (st.cal ? ' cal' : '') + '" role="img" aria-label="Veidlapas priekšskatījums">' + frame + '<div class="layer" style="' + off + '">' + text + '</div></div>';
+}
+function wiz5(sh, ro) {
+  const t = totals(sh); const c = C(sh.consigneeId); const needNo = sh.docs.eur1 || sh.docs.app; const okNo = !needNo || FORMNO.test((sh.formNo || '').trim());
+  const errs = hasErr(sh);
+  const block = errs ? 'Komplektā ir kļūdas (3. solis).' : !okNo ? 'Ievadiet veidlapas numuru 4. solī.' : '';
+  return '<div class="cols"><div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div class="panel"><h2>Komplekts drukai</h2><div class="tw"><table><tbody>' +
+      '<tr><td>Saņēmējs</td><td>' + esc(c ? c.name + ', ' + cname(c.cc) : '—') + '</td></tr>' +
+      '<tr><td>Dokumenti</td><td>' + docsLabel(sh.docs) + '</td></tr>' +
+      '<tr><td>Veidlapas Nr.</td><td class="mono">' + (needNo ? esc(sh.formNo || '—') : 'nav nepieciešams') + '</td></tr>' +
+      '<tr><td>Preču rindas</td><td class="mono">' + sh.lines.length + ' · ' + nf(t.pcs, 0) + ' gab. · ' + nf(t.gross) + ' kg bruto · ' + (sh.pallets || 0) + ' paletes</td></tr>' +
+      '<tr><td>Printera nobīde</td><td class="mono">X ' + S.printer.x + ' mm · Y ' + S.printer.y + ' mm</td></tr>' +
+    '</tbody></table></div></div>' +
+    (block ? '<div class="ro" style="background:var(--bad-soft);color:var(--bad)">' + block + '</div>' : '') +
+    '<div class="row">' +
+      (ro ? '<button class="btn pri" data-act="reprint">Atkārtot izdruku</button>' : '<button class="btn pri" data-act="print"' + (block ? ' disabled' : '') + '>Drukāt uz veidlapas</button>') +
+      '<button class="btn" data-act="pdf"' + (errs ? ' disabled' : '') + '>Lejupielādēt PDF</button>' +
+      (sh.docs.coo ? '<button class="btn" data-act="coo"' + (errs ? ' disabled' : '') + '>Kopēt datus ES izc. sertifikātam</button>' : '') +
+    '</div>' +
+    (sh.status === 'Izdrukāts' ? '<div class="row"><button class="btn" data-act="submitted">Atzīmēt: iesniegts muitā</button><button class="btn" data-act="spoil">Veidlapa sabojāta — drukāt uz nākamās</button></div>' : '') +
+    (sh.status === 'Iesniegts' ? '<div class="row"><button class="btn" data-act="approved">Atzīmēt: apstiprināts</button></div>' : '') +
+  '</div><div class="panel note"><div class="eyebrow">Kas notiek pēc drukas</div><ul style="margin:6px 0 0;padding-left:18px">' +
+    '<li>Sūtījums saņem statusu „Izdrukāts"; arhīvā tiek reģistrēts veidlapas numurs, lietotājs un laiks.</li><li>Sabojātu veidlapu atzīmē, un komplektu drukā uz nākamās — uzskaite paliek pilnīga.</li><li>Pēc muitas apstiprinājuma statusu maina uz „Apstiprināts"; sūtījumu var kopēt nākamajam pasūtījumam.</li></ul>' +
+    '<p class="sub" style="margin:8px 0 0">Prototipā druka un PDF netiek veikti — tiek mainīts tikai statuss.</p></div></div>';
+}
+
+// ----- Bibliotēka -----
+function vBib() {
+  let h = '<div class="card"><div class="head"><div><div class="eyebrow">Ievada vienu reizi, izmanto katrā sūtījumā</div><h1>Datu bibliotēka</h1></div></div>' +
+    '<div class="tabs" style="margin-top:10px">' + [['c','Saņēmēji (' + S.consignees.length + ')'],['g','Preču katalogs (' + S.goods.length + ')'],['e','Eksportētāji (' + S.exporters.length + ')']].map(([k, t]) => '<button data-lib="' + k + '" class="' + (st.lib === k ? 'on' : '') + '">' + t + '</button>').join('') + '</div><div style="margin-top:12px">';
+  if (st.lib === 'c') {
+    h += '<div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="sub">Aktīvi: ' + S.consignees.filter(c => c.active).length + ' · neaktīvi: ' + S.consignees.filter(c => !c.active).length + '</span><button class="btn" data-act="addC">' + (st.addC ? 'Aizvērt' : '+ Jauns saņēmējs') + '</button></div>';
+    if (st.addC) h += '<div class="panel" style="margin-bottom:10px"><div class="row"><label class="f grow">Nosaukums<input id="nc_name" placeholder="piem., KAZ TRADE LLP"></label><label class="f grow">Adrese<input id="nc_addr" placeholder="iela, pilsēta"></label><label class="f" style="flex:0 1 200px">Valsts' + sel('nc_cc', Object.keys(COUNTRIES).map(k => [k, k + ' · ' + COUNTRIES[k]]), 'KZ') + '</label><button class="btn pri" data-act="saveC">Saglabāt</button></div></div>';
+    h += '<div class="tw"><table><thead><tr><th>Nosaukums</th><th>Adrese</th><th>Valsts</th><th>Dokumenti pēc galamērķa</th><th>Statuss</th><th></th></tr></thead><tbody>' +
+      S.consignees.map(c => { const s = suggestDocs(c.cc);
+        return '<tr><td>' + esc(c.name) + '</td><td class="sub">' + esc(c.addr) + '</td><td class="mono">' + c.cc + '</td><td>' + (EU.includes(c.cc) ? '<span class="sub">ES — nav nepieciešami</span>' : s.d.eur1 ? 'EUR.1 komplekts' : 'ES izc. sertifikāts') + '</td><td>' + (c.active ? '<span class="chip Izdrukāts">Aktīvs</span>' : '<span class="chip Melnraksts">Neaktīvs</span>') + '</td><td><button class="btn sm" data-tog="' + c.id + '">' + (c.active ? 'Deaktivizēt' : 'Aktivizēt') + '</button></td></tr>'; }).join('') + '</tbody></table></div>';
+  } else if (st.lib === 'g') {
+    h += '<div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="sub">Vienības svars tiek izmantots kopsummu aprēķinam katrā sūtījumā.</span><button class="btn" data-act="addG">' + (st.addG ? 'Aizvērt' : '+ Jauna prece') + '</button></div>';
+    if (st.addG) h += '<div class="panel ai" style="margin-bottom:10px"><div class="row"><label class="f grow">Apraksts (LV)<input id="ng_lv" placeholder="piem., Piena šokolāde, 100 g"></label><label class="f grow">Apraksts (EN, veidlapām)<input id="ng_en" placeholder="MILK CHOCOLATE 100 G"></label></div>' +
+      '<div class="row" style="margin-top:8px"><label class="f" style="flex:1 1 150px">EAN<input id="ng_ean" value="4750000000080"></label><label class="f" style="flex:0 1 110px">Izcelsme' + sel('ng_or', Object.keys(ORIG).map(k => [k, k]), 'LV') + '</label><label class="f" style="flex:0 1 120px">Bruto kg/gab.<input id="ng_ug" type="number" step="0.001" value="0.11"></label><label class="f" style="flex:0 1 120px">Neto kg/gab.<input id="ng_un" type="number" step="0.001" value="0.1"></label></div>' +
+      '<div class="row" style="margin-top:8px"><label class="f" style="flex:0 1 160px">HS kods<input id="ng_hs" placeholder="0000 00 00"></label><button class="btn" data-act="aiNew">AI ieteikums no apraksta</button><button class="btn pri" data-act="saveG">Saglabāt preci</button></div>' +
+      (st.newHs.length ? '<div style="margin-top:8px">' + st.newHs.map(s => '<div class="sugg"><div><span class="code">' + s.hs + '</span> <span class="sub">' + esc(s.t) + '</span></div><button class="btn sm" data-usehs="' + s.hs + '">Izmantot</button></div>').join('') + '</div>' : '') + '</div>';
+    h += '<div class="tw"><table><thead><tr><th>Prece</th><th>EN apraksts</th><th>HS kods</th><th>EAN</th><th>Izc.</th><th class="num">Bruto kg/gab.</th><th class="num">Neto kg/gab.</th></tr></thead><tbody>' +
+      S.goods.map(g => '<tr><td>' + esc(g.lv) + '</td><td class="mono" style="white-space:normal">' + esc(g.en) + '</td><td>' + (g.hs ? '<span class="mono">' + g.hs + '</span>' : '<span class="chip miss">nav — AI ieteikums sūtījumā</span>') + '</td><td class="mono">' + g.ean + '</td><td class="mono">' + g.origin + '</td><td class="num">' + g.ug.toFixed(3) + '</td><td class="num">' + g.un.toFixed(3) + '</td></tr>').join('') + '</tbody></table></div>';
+  } else {
+    h += '<div class="tw"><table><thead><tr><th>Nosaukums</th><th>Adrese</th><th>Valsts</th><th>Reģ. Nr.</th></tr></thead><tbody>' + S.exporters.map(e => '<tr><td>' + esc(e.name) + '</td><td>' + esc(e.addr) + '</td><td>' + e.country + '</td><td class="mono">' + e.reg + '</td></tr>').join('') + '</tbody></table></div><p class="sub">Vairāki eksportētāji — ja uzņēmums noformē dokumentus arī saistītiem uzņēmumiem.</p>';
+  }
+  return h + '</div></div>';
+}
+
+// ----- Arhīvs -----
+function vArh() {
+  const q = st.q.toLowerCase();
+  const list = S.ships.filter(s => {
+    const c = C(s.consigneeId);
+    const hay = [s.id, s.formNo, c && c.name, c && c.cc, s.invoice].concat(s.lines.map(l => G(l.g).lv + ' ' + G(l.g).hs)).join(' ').toLowerCase();
+    return (!q || hay.includes(q)) && (!st.fc || s.consigneeId === st.fc) && (!st.fs || s.status === st.fs);
+  }).sort((a, b) => b.id.localeCompare(a.id));
+  return '<div class="card"><div class="head"><div><div class="eyebrow">Visi izsniegtie dokumenti</div><h1>Arhīvs</h1></div></div>' +
+    '<div class="row" style="margin-top:10px"><label class="f grow">Meklēt<input id="q" data-s="q" value="' + esc(st.q) + '" placeholder="saņēmējs, valsts, prece, HS kods, veidlapas Nr., rēķins"></label>' +
+    '<label class="f" style="flex:0 1 220px">Saņēmējs' + sel('fc', [['', 'Visi']].concat(S.consignees.map(c => [c.id, c.name])), st.fc) + '</label>' +
+    '<label class="f" style="flex:0 1 160px">Statuss' + sel('fs', [['', 'Visi'], ['Melnraksts','Melnraksts'], ['Izdrukāts','Izdrukāts'], ['Iesniegts','Iesniegts'], ['Apstiprināts','Apstiprināts'], ['Atcelts','Atcelts']], st.fs) + '</label></div></div>' +
+    '<div class="card"><div class="tw"><table><thead><tr><th>Nr.</th><th>Datums</th><th>Saņēmējs</th><th>Valsts</th><th>Dokumenti</th><th>Veidlapa</th><th class="num">Bruto, kg</th><th>Statuss</th><th></th></tr></thead><tbody>' +
+      (list.length ? list.map(s => shipRow(s, '<button class="btn sm" data-open="' + s.id + '">Atvērt</button> <button class="btn sm" data-copy="' + s.id + '">Kopēt kā jaunu</button>')).join('') : '<tr><td colspan="9" class="empty">Nekas netika atrasts. Mainiet meklēšanas tekstu vai filtrus.</td></tr>') +
+    '</tbody></table></div><p class="sub" style="margin:8px 0 0">Atrasti: ' + list.length + ' no ' + S.ships.length + '</p></div>';
+}
+
+// ----- Atskaites -----
+function vAtsk() {
+  const ships = S.ships.filter(s => s.status !== 'Melnraksts' && s.status !== 'Atcelts' && (!st.period || s.date.startsWith(st.period)));
+  const byC = {}, byG = {};
+  ships.forEach(s => { const t = totals(s); const k = s.consigneeId; byC[k] = byC[k] || { n:0, kg:0 }; byC[k].n++; byC[k].kg += t.gross;
+    s.lines.forEach(l => { byG[l.g] = byG[l.g] || { q:0, kg:0 }; byG[l.g].q += Number(l.q) || 0; byG[l.g].kg += lineG(l); }); });
+  const cRows = Object.entries(byC).sort((a, b) => b[1].kg - a[1].kg); const maxC = Math.max(1, ...cRows.map(r => r[1].kg));
+  const gRows = Object.entries(byG).sort((a, b) => b[1].kg - a[1].kg); const maxG = Math.max(1, ...gRows.map(r => r[1].kg));
+  const tot = ships.reduce((a, s) => a + totals(s).gross, 0);
+  return '<div class="card"><div class="head"><div><div class="eyebrow">Noformētie sūtījumi (bez melnrakstiem un atceltajiem)</div><h1>Atskaites</h1></div><div class="row"><label class="f" style="min-width:170px">Periods' + sel('period', [['2026-10','Oktobris 2026'], ['2026-09','Septembris 2026'], ['','Visi periodi']], st.period) + '</label><button class="btn" data-act="xlsx">Eksportēt XLSX</button></div></div></div>' +
+    '<div class="kpis">' + kpi(ships.length, 'Sūtījumi') + kpi(nf(tot, 0), 'Bruto kg') + kpi(cRows.length, 'Saņēmēji periodā') + kpi(ships.filter(s => s.docs.eur1).length, 'EUR.1 izsniegti') + '</div>' +
+    '<div class="card"><h2>Pēc saņēmēja · bruto kg</h2>' + (cRows.length ? '<div class="bars">' + cRows.map(([k, v]) => '<div class="bar"><span class="nm" title="' + esc(C(k).name) + '">' + esc(C(k).name) + ' · ' + C(k).cc + '</span><span class="tr"><i style="width:' + (v.kg / maxC * 100) + '%"></i></span><span class="v">' + nf(v.kg, 0) + '</span></div>').join('') + '</div>' : '<p class="empty">Periodā nav noformētu sūtījumu.</p>') + '</div>' +
+    '<div class="card"><h2>Pēc preces</h2><div class="tw"><table><thead><tr><th>Prece</th><th>HS kods</th><th class="num">Gab.</th><th class="num">Bruto kg</th><th style="width:30%"></th></tr></thead><tbody>' +
+      (gRows.length ? gRows.map(([k, v]) => '<tr><td>' + esc(G(k).lv) + '</td><td class="mono">' + (G(k).hs || '—') + '</td><td class="num">' + nf(v.q, 0) + '</td><td class="num">' + nf(v.kg) + '</td><td><div class="bar" style="grid-template-columns:1fr"><span class="tr"><i style="width:' + (v.kg / maxG * 100) + '%"></i></span></div></td></tr>').join('') : '<tr><td colspan="5" class="empty">—</td></tr>') +
+    '</tbody></table></div></div>';
+}
+
+// ----- Iestatījumi -----
+function vIest() {
+  return '<div class="card"><div class="head"><div><div class="eyebrow">Administrēšana</div><h1>Iestatījumi</h1></div></div></div>' +
+    '<div class="cols"><div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div class="card"><h2>Lietotāji un lomas</h2><div class="tw"><table><thead><tr><th>Lietotājs</th><th>Loma</th><th>Tiesības</th></tr></thead><tbody>' +
+      '<tr><td>Lietotājs A</td><td>Administrators</td><td class="sub">Viss, t.sk. veidlapu izkārtojumi un lietotāji</td></tr>' +
+      '<tr><td>Lietotājs B</td><td>Dokumentu sagatavotājs</td><td class="sub">Sūtījumi, bibliotēka, druka</td></tr>' +
+      '<tr><td>Lietotājs C</td><td>Skatītājs</td><td class="sub">Arhīvs un atskaites</td></tr></tbody></table></div></div>' +
+    '<div class="card"><h2>Veidlapu izkārtojumi</h2><div class="tw"><table><thead><tr><th>Veidlapa</th><th>Formāts</th><th>Ailes</th></tr></thead><tbody>' +
+      '<tr><td>EUR.1 preču aprites sertifikāts</td><td class="mono">A4 210×297</td><td class="mono">12</td></tr><tr><td>EUR.1 pieteikums</td><td class="mono">A4 210×297</td><td class="mono">12</td></tr>' +
+      '<tr><td>Eksportētāja deklarācija</td><td class="mono">A4 otrā puse</td><td class="mono">4</td></tr><tr><td>ES izcelsmes sertifikāts</td><td class="mono">A4 210×297</td><td class="mono">8</td></tr></tbody></table></div><p class="sub" style="margin:8px 0 0">Ailes koordinātes milimetros maina administrators — bez programmētāja.</p></div>' +
+    '</div><div class="card"><h2>Darbību žurnāls</h2><div class="log">' + S.log.map(l => '<div>' + esc(l) + '</div>').join('') + '</div></div></div>';
+}
+
+// ---------- Notikumi ----------
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  const d = b.dataset; const sh = st.cur;
+  if (d.go) return go(d.go);
+  if (d.open) return openShip(S.ships.find(s => s.id === d.open));
+  if (d.copy) return copyShip(S.ships.find(s => s.id === d.copy));
+  if (d.step) { const n = +d.step; if (n > 3 && n > st.step && hasErr(sh)) { st.step = 3; toast('Vispirms novērsiet kļūdas pārbaudē.'); } else st.step = n; return render(); }
+  if (d.tab) { st.docTab = d.tab; return render(); }
+  if (d.lib) { st.lib = d.lib; return render(); }
+  if (d.ai) { st.ai = d.ai; return render(); }
+  if (d.del !== undefined) { sh.lines.splice(+d.del, 1); return render(); }
+  if (d.hs) { const [gid, hs] = d.hs.split('|'); G(gid).hs = hs; st.ai = null; log('HS kods ' + hs + ' apstiprināts precei „' + G(gid).lv + '"'); toast('HS kods ' + hs + ' apstiprināts un saglabāts preču katalogā.'); return render(); }
+  if (d.tog) { const c = C(d.tog); c.active = !c.active; return render(); }
+  if (d.usehs) { $('#ng_hs').value = d.usehs; return; }
+  const a = d.act;
+  if (a === 'new') return newShip();
+  if (a === 'back') { if (st.step === 1 || st.view !== 'wiz') return go('sut'); st.step--; return render(); }
+  if (a === 'next') { if (st.step === 3 && hasErr(sh)) return toast('Vispirms novērsiet kļūdas.'); st.step++; return render(); }
+  if (a === 'save') { log(sh.id + ' melnraksts saglabāts'); toast('Melnraksts ' + sh.id + ' saglabāts.'); return; }
+  if (a === 'applydocs') { const s = suggestDocs(C(sh.consigneeId).cc); if (s.d) sh.docs = { ...s.d }; return render(); }
+  if (a === 'addline') { const gid = $('#addGood').value; const q = +$('#addQty').value; if (!gid) return toast('Izvēlieties preci no kataloga.'); sh.lines.push({ g:gid, q: q > 0 ? q : 1 }); if (!G(gid).hs) st.ai = gid; return render(); }
+  if (a === 'csv') { const add = [['g5', 432], ['g6', 600]].filter(([g]) => !sh.lines.some(l => l.g === g)); add.forEach(([g, q]) => sh.lines.push({ g, q })); toast(add.length ? 'Importētas ' + add.length + ' rindas no parauga rēķina (demo).' : 'Parauga rēķina rindas jau pievienotas.'); return render(); }
+  if (a === 'cal') { st.cal = !st.cal; return render(); }
+  if (a === 'calpage') return toast('Prototipā druka netiek veikta. Produktā: kalibrēšanas lapa uz parasta papīra ar krustiņiem aiļu stūros.');
+  if (a === 'print') { sh.status = 'Izdrukāts'; sh.printedAt = now(); log(sh.id + ' izdrukāts' + (sh.formNo ? ' uz veidlapas ' + sh.formNo : '')); toast('Nosūtīts drukai (demo). Statuss: Izdrukāts.'); return render(); }
+  if (a === 'reprint') { log(sh.id + ' atkārtota izdruka'); return toast('Atkārtota izdruka reģistrēta žurnālā (demo).'); }
+  if (a === 'pdf') { log(sh.id + ' PDF sagatavots'); return toast('PDF sagatavots (demo — prototipā fails netiek izveidots).'); }
+  if (a === 'coo') { const txt = box8(sh); try { navigator.clipboard.writeText(txt).then(() => toast('Preču apraksts nokopēts — ielīmējiet essCert 6. ailē.'), () => toast('Kopēšana nav atļauta šajā skatā.')); } catch (e) { toast('Kopēšana nav atļauta šajā skatā.'); } return; }
+  if (a === 'submitted') { sh.status = 'Iesniegts'; log(sh.id + ' iesniegts muitā'); return render(); }
+  if (a === 'approved') { sh.status = 'Apstiprināts'; log(sh.id + ' apstiprināts'); return render(); }
+  if (a === 'spoil') { S.spoiled++; log(sh.id + ' veidlapa ' + (sh.formNo || '') + ' atzīmēta kā sabojāta'); sh.formNo = ''; sh.status = 'Melnraksts'; st.step = 4; toast('Veidlapa atzīmēta kā sabojāta. Ievadiet nākamās veidlapas numuru.'); return render(); }
+  if (a === 'addC') { st.addC = !st.addC; return render(); }
+  if (a === 'saveC') { const n = $('#nc_name').value.trim(); if (!n) return toast('Ievadiet saņēmēja nosaukumu.'); const id = 'c' + (S.consignees.length + 1);
+    S.consignees.push({ id, name:n.toUpperCase(), addr:$('#nc_addr').value.trim().toUpperCase(), cc:$('#nc_cc').value, active:true }); st.addC = false; log('Saņēmējs ' + n.toUpperCase() + ' pievienots'); toast('Saņēmējs pievienots bibliotēkai.'); return render(); }
+  if (a === 'addG') { st.addG = !st.addG; st.newHs = []; return render(); }
+  if (a === 'aiNew') { st.newHs = aiSuggest($('#ng_lv').value + ' ' + $('#ng_en').value); const keep = ['ng_lv','ng_en','ng_ean','ng_or','ng_ug','ng_un','ng_hs'].map(i => [i, $('#' + i).value]); render(); keep.forEach(([i, v]) => { $('#' + i).value = v; }); if (!st.newHs.length) toast('Nav atbilstības — mēģiniet aprakstīt preci sīkāk (piem., „šokolāde", „tēja").'); return; }
+  if (a === 'saveG') { const lv = $('#ng_lv').value.trim(); if (!lv) return toast('Ievadiet preces aprakstu.'); const id = 'g' + (S.goods.length + 1);
+    S.goods.push({ id, lv, en:($('#ng_en').value.trim() || lv).toUpperCase(), hs:$('#ng_hs').value.trim(), ean:$('#ng_ean').value.trim(), origin:$('#ng_or').value, ug:+$('#ng_ug').value || 0, un:+$('#ng_un').value || 0 });
+    st.addG = false; st.newHs = []; log('Prece „' + lv + '" pievienota katalogam'); toast('Prece pievienota katalogam.'); return render(); }
+  if (a === 'xlsx') return toast('Atskaite sagatavota (demo — prototipā fails netiek izveidots).');
+});
+document.addEventListener('input', (ev) => {
+  const el = ev.target; const d = el.dataset; const sh = st.cur;
+  if (d.q !== undefined) { sh.lines[+d.q].q = +el.value; softRender(el); return; }
+  if (d.p) { S.printer[d.p] = +el.value || 0; softRender(el); return; }
+  if (d.s) { st[d.s] = el.value; softRender(el); return; }
+  if (d.f && el.tagName === 'INPUT') { sh[d.f] = d.f === 'pallets' ? +el.value : d.f === 'formNo' ? el.value.toUpperCase() : el.value; if (d.f === 'formNo' || d.f === 'pallets') softRender(el); }
+});
+document.addEventListener('change', (ev) => {
+  const el = ev.target; const d = el.dataset; const sh = st.cur;
+  if (d.doc) { sh.docs[d.doc] = el.checked; return render(); }
+  if (el.tagName === 'SELECT') {
+    if (el.id === 'addGood') return;
+    if (d.f && sh && st.view === 'wiz') { sh[d.f] = el.value; return render(); }
+    if (el.id === 'fc' || el.id === 'fs' || el.id === 'period') { st[el.id] = el.value; return render(); }
+  }
+});
+// Pārzīmē, saglabājot fokusu un kursoru ievades laukā
+function softRender(el) {
+  const id = el.id, key = el.dataset.q, s = el.selectionStart;
+  render();
+  const n = id ? document.getElementById(id) : document.querySelector('[data-q="' + key + '"]');
+  if (n) { n.focus(); try { if (s != null && n.type !== 'number') n.setSelectionRange(s, s); } catch (e) {} }
+}
+
+const h0 = (location.hash || '').slice(1);
+if (VIEWS.some(v => v[0] === h0)) st.view = h0;
+render();
+})();
+</script>
+</body></html>
